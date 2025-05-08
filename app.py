@@ -2,6 +2,10 @@
 import streamlit as st
 import yfinance as yf
 import requests
+import os
+
+# --- Load API Key from .env ---
+api_key = os.getenv("GROQ_API_KEY")
 
 # --- Home Screen Visuals ---
 st.set_page_config(page_title="Equity Research AI", layout="centered")
@@ -32,7 +36,7 @@ def get_summary(ticker):
 def generate_ai_summary(summary_data):
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
-        "Authorization": "Bearer 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",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
 
