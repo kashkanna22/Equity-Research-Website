@@ -71,6 +71,77 @@ def generate_ai_summary(summary_data):
         except:
             return f"Error generating AI summary: {e}"
 
+# --- Stock Scoring Function ---
+def calculate_score(summary_data):
+    try:
+        score = 0
+        pe = summary_data.get("P/E Ratio")
+        cap = summary_data.get("Market Cap")
+        net_income = summary_data.get("Net Income (TTM)")
+        revenue = summary_data.get("Revenue (TTM)")
+
+        # --- Valuation (25 pts) ---
+        if isinstance(pe, (int, float)):
+            if pe < 10:
+                score += 25
+            elif pe < 20:
+                score += 20
+            elif pe < 30:
+                score += 10
+            else:
+                score += 5
+        else:
+            score += 10
+
+        # --- Profitability (25 pts) ---
+        if isinstance(net_income, int) and net_income > 0 and isinstance(revenue, int) and revenue > 0:
+            margin = net_income / revenue
+            if margin > 0.15:
+                score += 25
+            elif margin > 0.08:
+                score += 20
+            elif margin > 0.03:
+                score += 10
+            else:
+                score += 5
+        else:
+            score += 0
+
+        # --- Financial Strength (15 pts) ---
+        if isinstance(net_income, int) and net_income > 0:
+            score += 10
+        else:
+            score += 5
+
+        # --- Growth (20 pts) ---
+        if isinstance(revenue, int):
+            if revenue > 10e9:
+                score += 20
+            elif revenue > 2e9:
+                score += 15
+            elif revenue > 500e6:
+                score += 10
+            else:
+                score += 5
+        else:
+            score += 5
+
+        # --- Market Opportunity (15 pts) ---
+        if isinstance(cap, int):
+            if cap < 2e9:
+                score += 15
+            elif cap < 10e9:
+                score += 10
+            else:
+                score += 5
+        else:
+            score += 5
+
+        return min(round(score), 100)
+
+    except Exception as e:
+        return f"N/A ({e})"
+
 # --- UI ---
 user_input = st.text_input("🔍 Search for a company or sector")
 
@@ -92,3 +163,16 @@ if st.button("Generate Report"):
             st.subheader("🧠 AI-Generated Investment Summary")
             ai_summary = generate_ai_summary(summary)
             st.write(ai_summary)
+
+            st.subheader("📈 Custom Score")
+            score = calculate_score(summary)
+            if isinstance(score, int):
+                if score >= 75:
+                    st.success(f"✅ Score: **{score}/100** — Strong fundamentals")
+                elif score >= 50:
+                    st.warning(f"⚠️ Score: **{score}/100** — Moderate fundamentals")
+                else:
+                    st.error(f"❌ Score: **{score}/100** — Weak fundamentals")
+            else:
+                st.write(f"Score: {score}")
+            st.write(f"This stock scores: **{score}/100** based on valuation, profitability, growth, and opportunity.")
